@@ -1,4 +1,5 @@
 # importaciones principales
+from app.models.document_model import DocumentModel
 from datetime import datetime
 # importaciones instaladas o de terceros
 from flask import Blueprint, request
@@ -13,7 +14,8 @@ UserRouter = Blueprint('user', __name__, url_prefix='/user')
 
 @UserRouter.route('/', methods=['GET'])
 def list_users():
-    users = UserModel.select()
+    users = UserModel.select().join(DocumentModel).where(UserModel.delete_at == None)
+    print(users)
     return users_schema.dumps(users), 200
 
 
@@ -30,11 +32,12 @@ def create_user():
         schema = user_schema.load(j)
     except ValidationError as err:
         return {"errors": err.messages}, 422
-
     try:
         user = UserModel.create(**schema)
     except IntegrityError as err:
         return {"errors": f'{err}'}, 422
+
+    user = UserModel.select().join(DocumentModel).where(UserModel.id == user.id)
 
     return user_schema.dump(user), 201
 
